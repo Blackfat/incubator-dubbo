@@ -310,6 +310,7 @@ public class ExtensionLoader<T> {
             throw new IllegalArgumentException("Extension name == null");
         }
         if ("true".equals(name)) {
+            // 获取默认的扩展点实现
             return getDefaultExtension();
         }
         Holder<Object> holder = cachedInstances.get(name);
@@ -319,6 +320,7 @@ public class ExtensionLoader<T> {
         }
         Object instance = holder.get();
         if (instance == null) {
+            // 双重检查
             synchronized (holder) {
                 instance = holder.get();
                 if (instance == null) {
@@ -450,6 +452,7 @@ public class ExtensionLoader<T> {
     }
 
     @SuppressWarnings("unchecked")
+    // 获取自适应扩展
     public T getAdaptiveExtension() {
         Object instance = cachedAdaptiveInstance.get();
         if (instance == null) {
@@ -500,6 +503,13 @@ public class ExtensionLoader<T> {
     }
 
     @SuppressWarnings("unchecked")
+    /*
+    *  1.通过 getExtensionClasses 获取所有的拓展类
+    *  2.通过反射创建拓展对象
+    *  3.向拓展对象中注入依赖
+    *  4.将拓展对象包裹在相应的 Wrapper 对象中
+    *
+    * */
     private T createExtension(String name) {
         Class<?> clazz = getExtensionClasses().get(name);
         if (clazz == null) {
@@ -508,13 +518,17 @@ public class ExtensionLoader<T> {
         try {
             T instance = (T) EXTENSION_INSTANCES.get(clazz);
             if (instance == null) {
+                // 通过反射创建实例
                 EXTENSION_INSTANCES.putIfAbsent(clazz, clazz.newInstance());
                 instance = (T) EXTENSION_INSTANCES.get(clazz);
             }
+            // 向实例中注入依赖
             injectExtension(instance);
             Set<Class<?>> wrapperClasses = cachedWrapperClasses;
             if (wrapperClasses != null && !wrapperClasses.isEmpty()) {
                 for (Class<?> wrapperClass : wrapperClasses) {
+                    // 将当前 instance 作为参数传给 Wrapper 的构造方法，并通过反射创建 Wrapper 实例。
+                    // 然后向 Wrapper 实例中注入依赖，最后将 Wrapper 实例再次赋值给 instance 变量
                     instance = injectExtension((T) wrapperClass.getConstructor(type).newInstance(instance));
                 }
             }
@@ -525,10 +539,14 @@ public class ExtensionLoader<T> {
         }
     }
 
+    /*
+    * 目前仅支持setter级别的方法注入
+    * */
     private T injectExtension(T instance) {
         try {
             if (objectFactory != null) {
                 for (Method method : instance.getClass().getMethods()) {
+                    // 检测方法是否以 set 开头，且方法仅有一个参数，且方法访问级别为 public
                     if (method.getName().startsWith("set")
                             && method.getParameterTypes().length == 1
                             && Modifier.isPublic(method.getModifiers())) {
@@ -573,8 +591,10 @@ public class ExtensionLoader<T> {
     }
 
     private Map<String, Class<?>> getExtensionClasses() {
+        // 从配置文件中加载所有的拓展类，可得到“配置项名称”到“配置类”的映射关系表
         Map<String, Class<?>> classes = cachedClasses.get();
         if (classes == null) {
+            // 双重检查
             synchronized (cachedClasses) {
                 classes = cachedClasses.get();
                 if (classes == null) {
@@ -760,6 +780,7 @@ public class ExtensionLoader<T> {
     }
 
     private Class<?> getAdaptiveExtensionClass() {
+        // 获取接口的扩展类
         getExtensionClasses();
         if (cachedAdaptiveClass != null) {
             return cachedAdaptiveClass;
