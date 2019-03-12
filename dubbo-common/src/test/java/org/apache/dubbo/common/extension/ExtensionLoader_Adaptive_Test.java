@@ -53,6 +53,14 @@ public class ExtensionLoader_Adaptive_Test {
     }
 
     @Test
+    public void test_getExtension(){
+        SimpleExt ext = ExtensionLoader.getExtensionLoader(SimpleExt.class).getExtension("impl1");
+        Map<String, String> map = new HashMap<String, String>();
+        URL url = new URL("p1", "1.2.3.4", 1010, "path1", map);
+        System.out.println(ext.bang(url,1));
+    }
+
+    @Test
     public void test_getAdaptiveExtension_defaultAdaptiveKey() throws Exception {
         {
             SimpleExt ext = ExtensionLoader.getExtensionLoader(SimpleExt.class).getAdaptiveExtension();
