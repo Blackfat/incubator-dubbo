@@ -54,6 +54,7 @@ public interface ProxyFactory {
      * @param url
      * @return invoker
      */
+    //会生成动态编译的Adaptive类
     @Adaptive({Constants.PROXY_KEY})
     <T> Invoker<T> getInvoker(T proxy, Class<T> type, URL url) throws RpcException;
 
